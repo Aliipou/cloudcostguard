@@ -1,0 +1,33 @@
+# CloudCostGuard configuration
+# Copy to ~/.cloudcostguard.yaml and adjust values
+
+provider: aws  # aws or azure
+
+aws:
+  profile: default
+  regions:
+    - us-east-1
+    - us-west-2
+    - eu-west-1
+  # role_arn: arn:aws:iam::123456789012:role/CostGuardReadOnly
+
+azure:
+  subscription_id: your-subscription-id-here
+  # tenant_id: your-tenant-id
+
+# Detection thresholds
+rules:
+  # CPU % below which an instance is considered idle
+  idle_cpu_threshold: 5.0
+
+  # Number of days to observe before flagging as idle
+  idle_days: 14
+
+  # Days a disk can be unattached before flagging
+  unattached_disk_days: 7
+
+  # CPU % below which an instance is considered oversized
+  oversized_cpu_threshold: 20.0
+
+  # Memory % below which an instance is considered oversized
+  oversized_mem_threshold: 20.0

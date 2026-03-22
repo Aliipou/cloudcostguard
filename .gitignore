@@ -1,0 +1,8 @@
+cloudcostguard
+cloudcostguard.exe
+dist/
+coverage.out
+*.test
+.env
+.cloudcostguard.yaml
+vendor/
