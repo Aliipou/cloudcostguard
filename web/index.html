@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CloudCostGuard Dashboard</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #242836;
+    --border: #2e3348;
+    --text: #e2e4ea;
+    --text-muted: #8b8fa3;
+    --accent: #6c72ff;
+    --accent-hover: #858aff;
+    --critical: #ef4444;
+    --high: #f97316;
+    --medium: #eab308;
+    --low: #22c55e;
+    --radius: 8px;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 1rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .logo {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: -0.02em;
+  }
+
+  .logo span { color: var(--text); }
+
+  .controls {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  select, button {
+    font-family: inherit;
+    font-size: 0.875rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.5rem 1rem;
+    background: var(--surface2);
+    color: var(--text);
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+
+  select:hover, select:focus { border-color: var(--accent); outline: none; }
+
+  .btn-scan {
+    background: var(--accent);
+    border-color: var(--accent);
+    font-weight: 600;
+    padding: 0.5rem 1.5rem;
+  }
+
+  .btn-scan:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+  .btn-scan:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  main { max-width: 1400px; margin: 0 auto; padding: 1.5rem; }
+
+  .summary-bar {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .summary-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+  }
+
+  .summary-card .label { font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em; margin-bottom: 0.25rem; }
+  .summary-card .value { font-size: 1.75rem; font-weight: 700; }
+  .summary-card .value.money { color: var(--low); }
+
+  .severity-pills { display: flex; gap: 0.5rem; margin-top: 0.5rem; flex-wrap: wrap; }
+  .pill { font-size: 0.75rem; padding: 0.15rem 0.5rem; border-radius: 999px; font-weight: 600; }
+  .pill-critical { background: rgba(239,68,68,0.15); color: var(--critical); }
+  .pill-high { background: rgba(249,115,22,0.15); color: var(--high); }
+  .pill-medium { background: rgba(234,179,8,0.15); color: var(--medium); }
+  .pill-low { background: rgba(34,197,94,0.15); color: var(--low); }
+
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  @media (max-width: 768px) {
+    .grid-2 { grid-template-columns: 1fr; }
+    header { padding: 1rem; }
+    main { padding: 1rem; }
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+  }
+
+  .card h3 { font-size: 0.875rem; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em; margin-bottom: 1rem; }
+
+  .bar-chart .bar-row { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; }
+  .bar-chart .bar-label { width: 80px; font-size: 0.8rem; color: var(--text-muted); text-transform: capitalize; }
+  .bar-chart .bar-track { flex: 1; height: 24px; background: var(--surface2); border-radius: 4px; overflow: hidden; position: relative; }
+  .bar-chart .bar-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease; display: flex; align-items: center; padding-left: 8px; font-size: 0.75rem; font-weight: 600; min-width: fit-content; }
+  .bar-fill.cat-compute { background: var(--accent); }
+  .bar-fill.cat-storage { background: var(--high); }
+  .bar-fill.cat-network { background: var(--medium); }
+  .bar-fill.cat-database { background: var(--critical); }
+
+  .table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow-x: auto;
+  }
+
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  thead { position: sticky; top: 0; background: var(--surface2); }
+  th { padding: 0.75rem 1rem; text-align: left; font-weight: 600; color: var(--text-muted); cursor: pointer; user-select: none; white-space: nowrap; }
+  th:hover { color: var(--text); }
+  th .sort-arrow { margin-left: 4px; font-size: 0.7rem; }
+  td { padding: 0.65rem 1rem; border-top: 1px solid var(--border); white-space: nowrap; }
+  tr:hover td { background: rgba(108,114,255,0.04); }
+
+  .sev { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
+  .sev-critical { background: rgba(239,68,68,0.15); color: var(--critical); }
+  .sev-high { background: rgba(249,115,22,0.15); color: var(--high); }
+  .sev-medium { background: rgba(234,179,8,0.15); color: var(--medium); }
+  .sev-low { background: rgba(34,197,94,0.15); color: var(--low); }
+
+  .empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--text-muted);
+  }
+
+  .empty-state h2 { font-size: 1.25rem; margin-bottom: 0.5rem; color: var(--text); }
+
+  .spinner {
+    display: inline-block;
+    width: 16px; height: 16px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    margin-right: 0.5rem;
+    vertical-align: middle;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .status-msg { font-size: 0.8rem; color: var(--text-muted); margin-left: 0.5rem; }
+  .status-error { color: var(--critical); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">CloudCost<span>Guard</span></div>
+  <div class="controls">
+    <select id="provider">
+      <option value="aws">AWS</option>
+      <option value="azure">Azure</option>
+    </select>
+    <select id="scanType">
+      <option value="all">All Resources</option>
+      <option value="compute">Compute</option>
+      <option value="storage">Storage</option>
+      <option value="network">Network</option>
+      <option value="database">Database</option>
+    </select>
+    <button class="btn-scan" id="scanBtn" onclick="runScan()">Run Scan</button>
+    <span id="status"></span>
+  </div>
+</header>
+
+<main>
+  <div id="summarySection" style="display:none">
+    <div class="summary-bar">
+      <div class="summary-card">
+        <div class="label">Total Findings</div>
+        <div class="value" id="totalFindings">0</div>
+        <div class="severity-pills" id="severityPills"></div>
+      </div>
+      <div class="summary-card">
+        <div class="label">Monthly Savings</div>
+        <div class="value money" id="monthlySavings">$0.00</div>
+      </div>
+      <div class="summary-card">
+        <div class="label">Annual Savings</div>
+        <div class="value money" id="annualSavings">$0.00</div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3>Savings by Category</h3>
+        <div class="bar-chart" id="categoryChart"></div>
+      </div>
+      <div class="card">
+        <h3>Severity Distribution</h3>
+        <div class="bar-chart" id="severityChart"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tableSection" style="display:none">
+    <div class="table-wrap">
+      <table id="findingsTable">
+        <thead>
+          <tr>
+            <th data-col="severity" onclick="sortTable('severity')">Severity <span class="sort-arrow"></span></th>
+            <th data-col="category" onclick="sortTable('category')">Category <span class="sort-arrow"></span></th>
+            <th data-col="title" onclick="sortTable('title')">Title <span class="sort-arrow"></span></th>
+            <th data-col="resource_type" onclick="sortTable('resource_type')">Resource Type <span class="sort-arrow"></span></th>
+            <th data-col="resource_id" onclick="sortTable('resource_id')">Resource ID <span class="sort-arrow"></span></th>
+            <th data-col="region" onclick="sortTable('region')">Region <span class="sort-arrow"></span></th>
+            <th data-col="monthly_savings" onclick="sortTable('monthly_savings')">Monthly <span class="sort-arrow"></span></th>
+            <th data-col="annual_savings" onclick="sortTable('annual_savings')">Annual <span class="sort-arrow"></span></th>
+            <th data-col="effort" onclick="sortTable('effort')">Effort <span class="sort-arrow"></span></th>
+          </tr>
+        </thead>
+        <tbody id="findingsBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="emptyState" class="empty-state">
+    <h2>Welcome to CloudCostGuard</h2>
+    <p>Select a cloud provider and click "Run Scan" to discover cost optimization opportunities.</p>
+  </div>
+</main>
+
+<script>
+(function () {
+  "use strict";
+
+  let findings = [];
+  let sortCol = "monthly_savings";
+  let sortAsc = false;
+
+  const sevOrder = { critical: 0, high: 1, medium: 2, low: 3 };
+  const effortOrder = { low: 0, medium: 1, high: 2 };
+
+  window.runScan = async function () {
+    const btn = document.getElementById("scanBtn");
+    const status = document.getElementById("status");
+    const provider = document.getElementById("provider").value;
+    const scanType = document.getElementById("scanType").value;
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>Scanning...';
+    status.textContent = "";
+    status.className = "status-msg";
+
+    try {
+      const url = "/api/scan?provider=" + encodeURIComponent(provider) + "&type=" + encodeURIComponent(scanType);
+      const resp = await fetch(url);
+      if (!resp.ok) {
+        const err = await resp.json().catch(function () { return { error: resp.statusText }; });
+        throw new Error(err.error || resp.statusText);
+      }
+      const data = await resp.json();
+      findings = data.findings || [];
+      renderSummary(data.summary);
+      renderCategoryChart(data.summary.savings_by_category || {});
+      renderSeverityChart(data.summary);
+      renderTable();
+      document.getElementById("summarySection").style.display = "";
+      document.getElementById("tableSection").style.display = "";
+      document.getElementById("emptyState").style.display = "none";
+      status.textContent = "Scan complete - " + findings.length + " findings";
+    } catch (e) {
+      status.textContent = "Error: " + e.message;
+      status.className = "status-msg status-error";
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Run Scan";
+    }
+  };
+
+  function renderSummary(s) {
+    document.getElementById("totalFindings").textContent = s.total_findings;
+    document.getElementById("monthlySavings").textContent = formatMoney(s.total_monthly_savings);
+    document.getElementById("annualSavings").textContent = formatMoney(s.total_annual_savings);
+
+    var pills = "";
+    if (s.critical_count) pills += '<span class="pill pill-critical">' + s.critical_count + ' Critical</span>';
+    if (s.high_count) pills += '<span class="pill pill-high">' + s.high_count + ' High</span>';
+    if (s.medium_count) pills += '<span class="pill pill-medium">' + s.medium_count + ' Medium</span>';
+    if (s.low_count) pills += '<span class="pill pill-low">' + s.low_count + ' Low</span>';
+    document.getElementById("severityPills").innerHTML = pills;
+  }
+
+  function renderCategoryChart(byCategory) {
+    var cats = ["compute", "storage", "network", "database"];
+    var max = 0;
+    cats.forEach(function (c) { if ((byCategory[c] || 0) > max) max = byCategory[c]; });
+    if (max === 0) max = 1;
+
+    var html = "";
+    cats.forEach(function (c) {
+      var val = byCategory[c] || 0;
+      var pct = Math.max((val / max) * 100, val > 0 ? 3 : 0);
+      html += '<div class="bar-row">' +
+        '<div class="bar-label">' + c + '</div>' +
+        '<div class="bar-track"><div class="bar-fill cat-' + c + '" style="width:' + pct + '%">' + formatMoney(val) + '</div></div>' +
+        '</div>';
+    });
+    document.getElementById("categoryChart").innerHTML = html;
+  }
+
+  function renderSeverityChart(s) {
+    var items = [
+      { label: "Critical", count: s.critical_count, cls: "sev-critical" },
+      { label: "High", count: s.high_count, cls: "sev-high" },
+      { label: "Medium", count: s.medium_count, cls: "sev-medium" },
+      { label: "Low", count: s.low_count, cls: "sev-low" }
+    ];
+    var max = 0;
+    items.forEach(function (it) { if (it.count > max) max = it.count; });
+    if (max === 0) max = 1;
+
+    var html = "";
+    items.forEach(function (it) {
+      var pct = Math.max((it.count / max) * 100, it.count > 0 ? 3 : 0);
+      html += '<div class="bar-row">' +
+        '<div class="bar-label">' + it.label + '</div>' +
+        '<div class="bar-track"><div class="bar-fill ' + it.cls + '" style="width:' + pct + '%">' + it.count + '</div></div>' +
+        '</div>';
+    });
+    document.getElementById("severityChart").innerHTML = html;
+  }
+
+  function renderTable() {
+    var sorted = findings.slice().sort(function (a, b) {
+      var va, vb;
+      switch (sortCol) {
+        case "severity":
+          va = sevOrder[a.severity] || 99;
+          vb = sevOrder[b.severity] || 99;
+          break;
+        case "monthly_savings":
+          va = a.monthly_savings;
+          vb = b.monthly_savings;
+          break;
+        case "annual_savings":
+          va = a.annual_savings;
+          vb = b.annual_savings;
+          break;
+        case "effort":
+          va = effortOrder[a.effort] || 99;
+          vb = effortOrder[b.effort] || 99;
+          break;
+        default:
+          va = (a[sortCol] || "").toString().toLowerCase();
+          vb = (b[sortCol] || "").toString().toLowerCase();
+      }
+      if (va < vb) return sortAsc ? -1 : 1;
+      if (va > vb) return sortAsc ? 1 : -1;
+      return 0;
+    });
+
+    var html = "";
+    sorted.forEach(function (f) {
+      html += "<tr>" +
+        '<td><span class="sev sev-' + f.severity + '">' + f.severity + "</span></td>" +
+        "<td>" + esc(f.category) + "</td>" +
+        "<td>" + esc(f.title) + "</td>" +
+        "<td>" + esc(f.resource_type) + "</td>" +
+        "<td>" + esc(f.resource_id) + "</td>" +
+        "<td>" + esc(f.region) + "</td>" +
+        "<td>" + formatMoney(f.monthly_savings) + "</td>" +
+        "<td>" + formatMoney(f.annual_savings) + "</td>" +
+        "<td>" + esc(f.effort) + "</td>" +
+        "</tr>";
+    });
+    document.getElementById("findingsBody").innerHTML = html;
+
+    // Update sort arrows
+    document.querySelectorAll("#findingsTable th").forEach(function (th) {
+      var arrow = th.querySelector(".sort-arrow");
+      if (th.dataset.col === sortCol) {
+        arrow.textContent = sortAsc ? " \u25B2" : " \u25BC";
+      } else {
+        arrow.textContent = "";
+      }
+    });
+  }
+
+  window.sortTable = function (col) {
+    if (sortCol === col) {
+      sortAsc = !sortAsc;
+    } else {
+      sortCol = col;
+      sortAsc = col === "severity" || col === "category" || col === "title" || col === "resource_type" || col === "resource_id" || col === "region" || col === "effort";
+    }
+    renderTable();
+  };
+
+  function formatMoney(val) {
+    if (val === undefined || val === null) return "$0.00";
+    return "$" + val.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function esc(str) {
+    if (!str) return "";
+    var div = document.createElement("div");
+    div.textContent = str;
+    return div.innerHTML;
+  }
+})();
+</script>
+</body>
+</html>
