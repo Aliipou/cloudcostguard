@@ -58,7 +58,7 @@ func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+	_ = json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
 }
 
 func (s *Server) handleProviders(w http.ResponseWriter, r *http.Request) {
@@ -71,7 +71,7 @@ func (s *Server) handleProviders(w http.ResponseWriter, r *http.Request) {
 		{"id": "azure", "name": "Microsoft Azure"},
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(providers)
+	_ = json.NewEncoder(w).Encode(providers)
 }
 
 func (s *Server) handleScan(w http.ResponseWriter, r *http.Request) {
@@ -120,7 +120,7 @@ func (s *Server) handleScan(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	enc := json.NewEncoder(w)
 	enc.SetIndent("", "  ")
-	enc.Encode(result)
+	_ = enc.Encode(result)
 }
 
 func (s *Server) handleDashboard(w http.ResponseWriter, r *http.Request) {
@@ -131,5 +131,5 @@ func (s *Server) handleDashboard(w http.ResponseWriter, r *http.Request) {
 func writeError(w http.ResponseWriter, status int, msg string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(map[string]string{"error": msg})
+	_ = json.NewEncoder(w).Encode(map[string]string{"error": msg})
 }

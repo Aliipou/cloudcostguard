@@ -41,7 +41,7 @@ func init() {
 	scanCmd.Flags().Float64Var(&minSavings, "min-savings", 0, "minimum monthly savings threshold in USD")
 	scanCmd.Flags().BoolVar(&dryRun, "dry-run", false, "preview what would be scanned without connecting")
 	scanCmd.Flags().IntVar(&concurrency, "concurrency", 5, "max concurrent API calls")
-	scanCmd.MarkFlagRequired("provider")
+	_ = scanCmd.MarkFlagRequired("provider")
 	rootCmd.AddCommand(scanCmd)
 }
 

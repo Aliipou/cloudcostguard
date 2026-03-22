@@ -179,7 +179,7 @@ func TestScan_ConcurrentExecution(t *testing.T) {
 
 	// Verify every scanner was called exactly once
 	for _, s := range scanners {
-		ms := s.(*mockScanner)
+		ms, _ := s.(*mockScanner)
 		if ms.called.Load() != 1 {
 			t.Errorf("scanner %s called %d times, want 1", ms.name, ms.called.Load())
 		}
