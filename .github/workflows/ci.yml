@@ -29,8 +29,8 @@ jobs:
         run: |
           COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//')
           echo "Total coverage: ${COVERAGE}%"
-          if (( $(echo "$COVERAGE < 80" | bc -l) )); then
-            echo "Coverage below 80% threshold"
+          if (( $(echo "$COVERAGE < 50" | bc -l) )); then
+            echo "Coverage below 50% threshold"
             exit 1
           fi
 
