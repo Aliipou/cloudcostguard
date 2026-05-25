@@ -17,6 +17,7 @@ Scans your infrastructure, finds wasted resources, and reports exact monthly and
 
 ## Live Demo
 **Frontend:** [https://cloudcostguard-demo.vercel.app](https://cloudcostguard-demo.vercel.app)
+**Backend API:** [https://cloudcostguard-backend.onrender.com](https://cloudcostguard-backend.onrender.com)
 
 | Category | AWS | Azure |
 |----------|-----|-------|
