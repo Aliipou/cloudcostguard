@@ -14,6 +14,10 @@ Scans your infrastructure, finds wasted resources, and reports exact monthly and
 
 ## What it detects
 
+
+## Live Demo
+**Frontend:** [https://cloudcostguard-demo.vercel.app](https://cloudcostguard-demo.vercel.app)
+
 | Category | AWS | Azure |
 |----------|-----|-------|
 | **Compute** | Idle EC2 instances, oversized instance types | Idle VMs |
