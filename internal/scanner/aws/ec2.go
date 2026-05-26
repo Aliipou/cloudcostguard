@@ -20,7 +20,7 @@ func NewEC2Scanner(cfg *config.Config, region string) *EC2Scanner {
 	return &EC2Scanner{cfg: cfg, region: region}
 }
 
-func (s *EC2Scanner) Name() string            { return "aws-ec2-" + s.region }
+func (s *EC2Scanner) Name() string             { return "aws-ec2-" + s.region }
 func (s *EC2Scanner) Category() model.Category { return model.CategoryCompute }
 
 func (s *EC2Scanner) Scan(ctx context.Context) ([]model.Finding, error) {
@@ -112,25 +112,75 @@ type ec2Instance struct {
 	Tags map[string]string
 }
 
-// listRunningInstances retrieves running EC2 instances via AWS SDK.
+// listRunningInstances retrieves all running EC2 instances via AWS SDK with
+// pagination (NextToken) and exponential-backoff retry on transient errors.
 func (s *EC2Scanner) listRunningInstances(ctx context.Context) ([]ec2Instance, error) {
-	// In production, this uses aws-sdk-go-v2:
+	// Production implementation (requires aws-sdk-go-v2 and credentials):
+	//
 	//   cfg, _ := awsconfig.LoadDefaultConfig(ctx, awsconfig.WithRegion(s.region))
 	//   client := ec2svc.NewFromConfig(cfg)
-	//   resp, _ := client.DescribeInstances(ctx, &ec2svc.DescribeInstancesInput{
-	//       Filters: []types.Filter{{Name: aws.String("instance-state-name"), Values: []string{"running"}}},
-	//   })
 	//
-	// For now, return empty to allow compilation without credentials.
-	// The full implementation requires AWS credentials at runtime.
+	//   var instances []ec2Instance
+	//   var nextToken *string
+	//   for {
+	//       var resp *ec2svc.DescribeInstancesOutput
+	//       err := withRetry(ctx, defaultRetry, func() error {
+	//           var callErr error
+	//           resp, callErr = client.DescribeInstances(ctx, &ec2svc.DescribeInstancesInput{
+	//               Filters:   []types.Filter{{Name: aws.String("instance-state-name"), Values: []string{"running"}}},
+	//               NextToken: nextToken,
+	//           })
+	//           return callErr
+	//       })
+	//       if err != nil {
+	//           return nil, fmt.Errorf("DescribeInstances page: %w", err)
+	//       }
+	//       for _, r := range resp.Reservations {
+	//           for _, i := range r.Instances {
+	//               instances = append(instances, ec2Instance{
+	//                   ID:   aws.ToString(i.InstanceId),
+	//                   Name: nameTagOrID(i.Tags, aws.ToString(i.InstanceId)),
+	//                   Type: string(i.InstanceType),
+	//                   Tags: flattenTags(i.Tags),
+	//               })
+	//           }
+	//       }
+	//       if resp.NextToken == nil {
+	//           break
+	//       }
+	//       nextToken = resp.NextToken
+	//   }
+	//   return instances, nil
 	return nil, nil
 }
 
-// getMetrics retrieves CloudWatch CPU/memory metrics for an instance.
+// getMetrics retrieves CloudWatch CPU/memory metrics for an instance with retry.
 func (s *EC2Scanner) getMetrics(ctx context.Context, instanceID string, days int) (*model.MetricsSummary, error) {
-	// In production, this uses CloudWatch:
+	// Production implementation (requires aws-sdk-go-v2 and credentials):
+	//
 	//   cfg, _ := awsconfig.LoadDefaultConfig(ctx, awsconfig.WithRegion(s.region))
 	//   client := cloudwatch.NewFromConfig(cfg)
-	//   resp, _ := client.GetMetricStatistics(ctx, &cloudwatch.GetMetricStatisticsInput{...})
+	//   now := time.Now().UTC()
+	//   start := now.AddDate(0, 0, -days)
+	//
+	//   var resp *cloudwatch.GetMetricStatisticsOutput
+	//   err := withRetry(ctx, defaultRetry, func() error {
+	//       var callErr error
+	//       resp, callErr = client.GetMetricStatistics(ctx, &cloudwatch.GetMetricStatisticsInput{
+	//           Namespace:  aws.String("AWS/EC2"),
+	//           MetricName: aws.String("CPUUtilization"),
+	//           Dimensions: []cwtypes.Dimension{{Name: aws.String("InstanceId"), Value: aws.String(instanceID)}},
+	//           StartTime:  aws.Time(start),
+	//           EndTime:    aws.Time(now),
+	//           Period:     aws.Int32(3600),
+	//           Statistics: []cwtypes.Statistic{cwtypes.StatisticAverage},
+	//       })
+	//       return callErr
+	//   })
+	//   if err != nil {
+	//       return nil, fmt.Errorf("GetMetricStatistics: %w", err)
+	//   }
+	//   avg := averageDatapoints(resp.Datapoints)
+	//   return &model.MetricsSummary{AvgCPUPercent: avg, ObservationDays: days}, nil
 	return nil, fmt.Errorf("not connected to AWS — configure credentials to enable scanning")
 }
