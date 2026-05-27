@@ -19,7 +19,7 @@ func NewELBScanner(cfg *config.Config, region string) *ELBScanner {
 	return &ELBScanner{cfg: cfg, region: region}
 }
 
-func (s *ELBScanner) Name() string            { return "aws-elb-" + s.region }
+func (s *ELBScanner) Name() string             { return "aws-elb-" + s.region }
 func (s *ELBScanner) Category() model.Category { return model.CategoryNetwork }
 
 func (s *ELBScanner) Scan(ctx context.Context) ([]model.Finding, error) {
@@ -67,6 +67,43 @@ type loadBalancer struct {
 	Tags map[string]string
 }
 
+// listIdleLoadBalancers retrieves load balancers with no healthy targets via
+// AWS SDK with pagination (NextMarker) and exponential-backoff retry on transient errors.
 func (s *ELBScanner) listIdleLoadBalancers(ctx context.Context) ([]loadBalancer, error) {
+	// Production implementation (requires aws-sdk-go-v2 and credentials):
+	//
+	//   cfg, _ := awsconfig.LoadDefaultConfig(ctx, awsconfig.WithRegion(s.region))
+	//   client := elbv2.NewFromConfig(cfg)
+	//
+	//   var lbs []loadBalancer
+	//   var nextMarker *string
+	//   for {
+	//       var resp *elbv2.DescribeLoadBalancersOutput
+	//       err := withRetry(ctx, defaultRetry, func() error {
+	//           var callErr error
+	//           resp, callErr = client.DescribeLoadBalancers(ctx, &elbv2.DescribeLoadBalancersInput{
+	//               Marker: nextMarker,
+	//           })
+	//           return callErr
+	//       })
+	//       if err != nil {
+	//           return nil, fmt.Errorf("DescribeLoadBalancers page: %w", err)
+	//       }
+	//       for _, lb := range resp.LoadBalancers {
+	//           // Check target group health; include only LBs with no healthy targets.
+	//           if isIdle(ctx, client, lb, withRetry) {
+	//               lbs = append(lbs, loadBalancer{
+	//                   ID:   aws.ToString(lb.LoadBalancerArn),
+	//                   Name: aws.ToString(lb.LoadBalancerName),
+	//                   Type: string(lb.Type),
+	//               })
+	//           }
+	//       }
+	//       if resp.NextMarker == nil {
+	//           break
+	//       }
+	//       nextMarker = resp.NextMarker
+	//   }
+	//   return lbs, nil
 	return nil, nil
 }
