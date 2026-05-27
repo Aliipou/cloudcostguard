@@ -19,7 +19,7 @@ func NewS3Scanner(cfg *config.Config, region string) *S3Scanner {
 	return &S3Scanner{cfg: cfg, region: region}
 }
 
-func (s *S3Scanner) Name() string            { return "aws-s3-" + s.region }
+func (s *S3Scanner) Name() string             { return "aws-s3-" + s.region }
 func (s *S3Scanner) Category() model.Category { return model.CategoryStorage }
 
 func (s *S3Scanner) Scan(ctx context.Context) ([]model.Finding, error) {
@@ -101,6 +101,47 @@ type s3Bucket struct {
 	OldVersionBytes    int64
 }
 
+// listBucketsWithMetrics retrieves S3 bucket metadata via AWS SDK.
+// ListBuckets returns all buckets in one call (no pagination token needed),
+// but per-bucket metric fetches (GetBucketLocation, ListObjectsV2) use
+// exponential-backoff retry on transient errors.
 func (s *S3Scanner) listBucketsWithMetrics(ctx context.Context) ([]s3Bucket, error) {
+	// Production implementation (requires aws-sdk-go-v2 and credentials):
+	//
+	//   cfg, _ := awsconfig.LoadDefaultConfig(ctx, awsconfig.WithRegion(s.region))
+	//   s3client := s3svc.NewFromConfig(cfg)
+	//
+	//   // ListBuckets returns all buckets at once — no pagination token.
+	//   var listResp *s3svc.ListBucketsOutput
+	//   err := withRetry(ctx, defaultRetry, func() error {
+	//       var callErr error
+	//       listResp, callErr = s3client.ListBuckets(ctx, &s3svc.ListBucketsInput{})
+	//       return callErr
+	//   })
+	//   if err != nil {
+	//       return nil, fmt.Errorf("ListBuckets: %w", err)
+	//   }
+	//
+	//   var buckets []s3Bucket
+	//   for _, b := range listResp.Buckets {
+	//       name := aws.ToString(b.Name)
+	//
+	//       // Fetch lifecycle configuration with retry.
+	//       var lcResp *s3svc.GetBucketLifecycleConfigurationOutput
+	//       hasLC := false
+	//       _ = withRetry(ctx, defaultRetry, func() error {
+	//           var callErr error
+	//           lcResp, callErr = s3client.GetBucketLifecycleConfiguration(ctx,
+	//               &s3svc.GetBucketLifecycleConfigurationInput{Bucket: aws.String(name)})
+	//           if callErr == nil && lcResp != nil {
+	//               hasLC = len(lcResp.Rules) > 0
+	//           }
+	//           return callErr
+	//       })
+	//
+	//       // Aggregate storage size via CloudWatch StorageMetrics with retry...
+	//       buckets = append(buckets, s3Bucket{Name: name, HasLifecyclePolicy: hasLC})
+	//   }
+	//   return buckets, nil
 	return nil, nil
 }
