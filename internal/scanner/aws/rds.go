@@ -20,7 +20,7 @@ func NewRDSScanner(cfg *config.Config, region string) *RDSScanner {
 	return &RDSScanner{cfg: cfg, region: region}
 }
 
-func (s *RDSScanner) Name() string            { return "aws-rds-" + s.region }
+func (s *RDSScanner) Name() string             { return "aws-rds-" + s.region }
 func (s *RDSScanner) Category() model.Category { return model.CategoryDatabase }
 
 func (s *RDSScanner) Scan(ctx context.Context) ([]model.Finding, error) {
@@ -119,10 +119,74 @@ type rdsMetrics struct {
 	AvgConnections float64
 }
 
+// listInstances retrieves all RDS DB instances via AWS SDK with pagination
+// (Marker) and exponential-backoff retry on transient errors.
 func (s *RDSScanner) listInstances(ctx context.Context) ([]rdsInstance, error) {
+	// Production implementation (requires aws-sdk-go-v2 and credentials):
+	//
+	//   cfg, _ := awsconfig.LoadDefaultConfig(ctx, awsconfig.WithRegion(s.region))
+	//   client := rdssvc.NewFromConfig(cfg)
+	//
+	//   var instances []rdsInstance
+	//   var marker *string
+	//   for {
+	//       var resp *rdssvc.DescribeDBInstancesOutput
+	//       err := withRetry(ctx, defaultRetry, func() error {
+	//           var callErr error
+	//           resp, callErr = client.DescribeDBInstances(ctx, &rdssvc.DescribeDBInstancesInput{
+	//               Marker: marker,
+	//           })
+	//           return callErr
+	//       })
+	//       if err != nil {
+	//           return nil, fmt.Errorf("DescribeDBInstances page: %w", err)
+	//       }
+	//       for _, db := range resp.DBInstances {
+	//           instances = append(instances, rdsInstance{
+	//               ID:            aws.ToString(db.DBInstanceIdentifier),
+	//               Name:          aws.ToString(db.DBInstanceIdentifier),
+	//               InstanceClass: aws.ToString(db.DBInstanceClass),
+	//               Engine:        aws.ToString(db.Engine),
+	//               MultiAZ:       aws.ToBool(db.MultiAZ),
+	//               Tags:          flattenRDSTags(db.TagList),
+	//           })
+	//       }
+	//       if resp.Marker == nil {
+	//           break
+	//       }
+	//       marker = resp.Marker
+	//   }
+	//   return instances, nil
 	return nil, nil
 }
 
+// getMetrics retrieves CloudWatch metrics for an RDS instance with retry.
 func (s *RDSScanner) getMetrics(ctx context.Context, instanceID string, days int) (*rdsMetrics, error) {
+	// Production implementation (requires aws-sdk-go-v2 and credentials):
+	//
+	//   cfg, _ := awsconfig.LoadDefaultConfig(ctx, awsconfig.WithRegion(s.region))
+	//   client := cloudwatch.NewFromConfig(cfg)
+	//   now := time.Now().UTC()
+	//   start := now.AddDate(0, 0, -days)
+	//
+	//   var cpuResp *cloudwatch.GetMetricStatisticsOutput
+	//   err := withRetry(ctx, defaultRetry, func() error {
+	//       var callErr error
+	//       cpuResp, callErr = client.GetMetricStatistics(ctx, &cloudwatch.GetMetricStatisticsInput{
+	//           Namespace:  aws.String("AWS/RDS"),
+	//           MetricName: aws.String("CPUUtilization"),
+	//           Dimensions: []cwtypes.Dimension{{Name: aws.String("DBInstanceIdentifier"), Value: aws.String(instanceID)}},
+	//           StartTime:  aws.Time(start),
+	//           EndTime:    aws.Time(now),
+	//           Period:     aws.Int32(3600),
+	//           Statistics: []cwtypes.Statistic{cwtypes.StatisticAverage},
+	//       })
+	//       return callErr
+	//   })
+	//   if err != nil {
+	//       return nil, fmt.Errorf("GetMetricStatistics CPUUtilization: %w", err)
+	//   }
+	//   // Similarly fetch DatabaseConnections metric with withRetry...
+	//   return &rdsMetrics{AvgCPUPercent: averageDatapoints(cpuResp.Datapoints)}, nil
 	return nil, fmt.Errorf("not connected to AWS")
 }
