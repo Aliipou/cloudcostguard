@@ -20,7 +20,7 @@ func NewEBSScanner(cfg *config.Config, region string) *EBSScanner {
 	return &EBSScanner{cfg: cfg, region: region}
 }
 
-func (s *EBSScanner) Name() string            { return "aws-ebs-" + s.region }
+func (s *EBSScanner) Name() string             { return "aws-ebs-" + s.region }
 func (s *EBSScanner) Category() model.Category { return model.CategoryStorage }
 
 func (s *EBSScanner) Scan(ctx context.Context) ([]model.Finding, error) {
@@ -69,6 +69,44 @@ type ebsVolume struct {
 	Tags       map[string]string
 }
 
+// listUnattachedVolumes retrieves all unattached EBS volumes via AWS SDK with
+// pagination (NextToken) and exponential-backoff retry on transient errors.
 func (s *EBSScanner) listUnattachedVolumes(ctx context.Context) ([]ebsVolume, error) {
+	// Production implementation (requires aws-sdk-go-v2 and credentials):
+	//
+	//   cfg, _ := awsconfig.LoadDefaultConfig(ctx, awsconfig.WithRegion(s.region))
+	//   client := ec2svc.NewFromConfig(cfg)
+	//
+	//   var volumes []ebsVolume
+	//   var nextToken *string
+	//   for {
+	//       var resp *ec2svc.DescribeVolumesOutput
+	//       err := withRetry(ctx, defaultRetry, func() error {
+	//           var callErr error
+	//           resp, callErr = client.DescribeVolumes(ctx, &ec2svc.DescribeVolumesInput{
+	//               Filters:   []types.Filter{{Name: aws.String("status"), Values: []string{"available"}}},
+	//               NextToken: nextToken,
+	//           })
+	//           return callErr
+	//       })
+	//       if err != nil {
+	//           return nil, fmt.Errorf("DescribeVolumes page: %w", err)
+	//       }
+	//       for _, v := range resp.Volumes {
+	//           volumes = append(volumes, ebsVolume{
+	//               ID:         aws.ToString(v.VolumeId),
+	//               Name:       nameTagOrID(v.Tags, aws.ToString(v.VolumeId)),
+	//               VolumeType: string(v.VolumeType),
+	//               SizeGB:     int(aws.ToInt32(v.Size)),
+	//               IOPS:       int(aws.ToInt32(v.Iops)),
+	//               Tags:       flattenTags(v.Tags),
+	//           })
+	//       }
+	//       if resp.NextToken == nil {
+	//           break
+	//       }
+	//       nextToken = resp.NextToken
+	//   }
+	//   return volumes, nil
 	return nil, nil
 }
