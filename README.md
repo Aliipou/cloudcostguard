@@ -1,3 +1,5 @@
+**Live (graph):** [https://ali-cloudcostguard.vercel.app](https://ali-cloudcostguard.vercel.app)
+
 <div align="center">
 
 [![Go](https://img.shields.io/badge/Go-1.22+-00ADD8?style=flat&logo=go)](https://golang.org)
