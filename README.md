@@ -1,4 +1,4 @@
-**Live (graph):** [https://ali-cloudcostguard.vercel.app](https://ali-cloudcostguard.vercel.app)
+### [▶ Live Demo](https://cloudcostguard-demo.vercel.app)
 
 <div align="center">
 
